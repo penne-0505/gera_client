@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:gera_client/env/env.dart';
+import 'dart:convert';
 
 
 /*
@@ -23,6 +25,17 @@ Future<void> setBaseDirectory(String path) async {
     await directory.create();
   }
   Directory.current = path;
+
+  final File configFile = File(Env.cfgPath);
+  final Map<String, String> configData = {'baseDirectory': path};
+  final String jsonConfig = jsonEncode(configData);
+
+  if (!await configFile.exists()) {
+    await configFile.create();
+    await configFile.writeAsString(jsonConfig);
+  } else {
+    await configFile.writeAsString(jsonConfig);
+  }
 
   final Directory downloadingDirectory = Directory('downloading');
   if (!await downloadingDirectory.exists()) {
@@ -49,4 +62,16 @@ Future<void> createSeriesDirectory(String seriesName) async {
   if (!await episodesDirectory.exists()) {
     await episodesDirectory.create(recursive: true);
   }
+}
+
+Future<String> getDownloadPath(String seriesName, int episodeNumber) async {
+  final String episodeNumberString = episodeNumber.toString();
+  final String downloadPath = 'serieses/$seriesName/episodes/$episodeNumberString/audio.mp3';
+  return downloadPath;
+}
+
+Future<String> getThumbnailPath(String seriesName, int episodeNumber) async {
+  final String episodeNumberString = episodeNumber.toString();
+  final String thumbnailPath = 'serieses/$seriesName/episodes/$episodeNumberString/thumbnail.jpg';
+  return thumbnailPath;
 }
