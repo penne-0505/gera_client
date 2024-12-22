@@ -1,13 +1,16 @@
+import 'package:gera_client/src/get_episode_info.dart';
 import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:html/parser.dart' show parse;
 import 'dart:io';
+import 'package:gera_client/env/env.dart';
+import 'package:gera_client/src/manage_path.dart';
 
 
 Future<String> getEpisodeUrl(int episodeNumber) async {
-  const String apiKey = 'AIzaSyCeQ_6bUYzKVMSgckMmSpTcsIFK6WaWaHM';
-  const String customSearchEngineId = '9797ea352430a41cd';
+  final String apiKey = Env.apiKey;
+  final String customSearchEngineId = Env.engineId;
   final String query = 'sn@gera.fan ${episodeNumber.toString()}';
   final String url = 'https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${customSearchEngineId}&q=${query}';
   final http.Response response = await http.get(Uri.parse(url));
@@ -50,7 +53,21 @@ Future<void> downloadAudio(String url, String downloadPath) async {
 
 // これまでの関数を使って、一連の処理を行う関数
 Future<void> downloadEpisode(int episodeNumber) async {
+  final String baseDirectory = await getBaseDirectory();
+  if (baseDirectory == '') {
+    throw Exception('Base directory is not set');
+  }
+
   final String episodeUrl = await getEpisodeUrl(episodeNumber);
   final String audioUrl = await getAudioUrl(episodeUrl);
-  await downloadAudio(audioUrl, 'C:/Users/penne/Downloads/audio.mp3');
+  final String seriesName = await getEpisodeInfo(episodeNumber);
+  final String downloadPath = await getDownloadPath(seriesName, episodeNumber);
+  await downloadAudio(audioUrl, downloadPath);
+}
+
+// 指定された範囲のエピソードをダウンロードする関数
+Future<void> downloadEpisodes(int start, int end) async {
+  for (int i = start; i <= end; i++) {
+    await downloadEpisode(i);
+  }
 }
