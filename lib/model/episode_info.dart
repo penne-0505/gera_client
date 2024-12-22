@@ -1,6 +1,7 @@
 class EpisodeInfo {
   final String title;
   final String description;
+  final String seriesName;
   final int? episodeLengthSeconds;
   final int episodeNumber;
   final String audioUrl;
@@ -11,6 +12,7 @@ class EpisodeInfo {
   EpisodeInfo({
     required this.title,
     required this.description,
+    required this.seriesName,
     this.episodeLengthSeconds, // 再生が始まったときに取得する
     required this.episodeNumber,
     required this.audioUrl,
@@ -21,13 +23,14 @@ class EpisodeInfo {
 
   @override
   String toString() {
-    return 'EpisodeInfo(title: $title, description: $description, episodeLengthSeconds: $episodeLengthSeconds, episodeNumber: $episodeNumber, audioUrl: $audioUrl, downloadPath: $downloadPath, downloadStatus: $downloadStatus, thumbnailPath: $thumbnailPath)';
+    return 'EpisodeInfo(title: $title, description: $description, seriesName: $seriesName, episodeLengthSeconds: $episodeLengthSeconds, episodeNumber: $episodeNumber, audioUrl: $audioUrl, downloadPath: $downloadPath, downloadStatus: $downloadStatus, thumbnailPath: $thumbnailPath)';
   }
 
   Map<String, dynamic> toJson() {
     return {
       'title': title,
       'description': description,
+      'seriesName': seriesName,
       'episodeLengthSeconds': episodeLengthSeconds,
       'episodeNumber': episodeNumber,
       'audioUrl': audioUrl,
