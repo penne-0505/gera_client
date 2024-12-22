@@ -54,7 +54,3 @@ Future<void> downloadEpisode(int episodeNumber) async {
   final String audioUrl = await getAudioUrl(episodeUrl);
   await downloadAudio(audioUrl, 'C:/Users/penne/Downloads/audio.mp3');
 }
-
-
-// !次やること: 関数のファイル分け
-// !次やること: uiの作成
