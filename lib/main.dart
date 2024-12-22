@@ -1,34 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:gera_client/src/get_audio_url.dart';
+import 'package:gera_client/src/download_episode.dart';
+import 'package:gera_client/src/get_episode_info.dart';
 
 
 void main() {
-  runApp(MainApp());
+  // runApp(MainApp());
+  downloadEpisode(221);
+  getEpisodeInfo(221).then((value) => print(value));
 }
 
 class MainApp extends StatelessWidget {
   MainApp({super.key});
-  final Future<String> responseJson = getAudioUrl();
+  
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: Scaffold(
         body: Center(
-          child: FutureBuilder<String>(
-            future: responseJson,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                print(snapshot.error);
-                return Text('Error: ${snapshot.error}');
-              } else {
-                print(snapshot.data);
-                return Text(snapshot.data ?? 'No data');
-              }
-            },
-          ),
+          child: Text('Hello, World!'),
         ),
       ),
     );
