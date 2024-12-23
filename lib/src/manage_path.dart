@@ -31,7 +31,7 @@ Future<void> setBaseDirectory(String path) async {
   final String jsonConfig = jsonEncode(configData);
 
   if (!await configFile.exists()) {
-    await configFile.create();
+    await configFile.create(recursive: true);
     await configFile.writeAsString(jsonConfig);
   } else {
     await configFile.writeAsString(jsonConfig);
@@ -66,12 +66,11 @@ Future<void> createSeriesDirectory(String seriesName) async {
 
 Future<String> getDownloadPath(String seriesName, int episodeNumber) async {
   final String episodeNumberString = episodeNumber.toString();
-  final String downloadPath = 'serieses/$seriesName/episodes/$episodeNumberString/audio.mp3';
+  final String downloadPath = '${await getBaseDirectory()}/serieses/$seriesName/episodes/$episodeNumberString/audio.mp3';
   return downloadPath;
 }
 
-Future<String> getThumbnailPath(String seriesName, int episodeNumber) async {
-  final String episodeNumberString = episodeNumber.toString();
-  final String thumbnailPath = 'serieses/$seriesName/episodes/$episodeNumberString/thumbnail.jpg';
+Future<String> getThumbnailPath(String seriesName) async {
+  final String thumbnailPath = '${await getBaseDirectory()}/serieses/$seriesName/thumbnail.jpg';
   return thumbnailPath;
 }
