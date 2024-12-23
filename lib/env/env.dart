@@ -7,7 +7,6 @@ abstract class Env {
   @EnviedField(varName: 'GERA_CLIENT_CS_ENGINE_ID', obfuscate: true)
   static String engineId = _Env.engineId;
 
-
   @EnviedField(varName: 'GERA_CLIENT_CS_API_KEY', obfuscate: true)
   static String apiKey = _Env.apiKey;
 
