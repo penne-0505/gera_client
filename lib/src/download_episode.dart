@@ -1,3 +1,4 @@
+import 'package:gera_client/model/episode_info.dart';
 import 'package:gera_client/src/get_episode_info.dart';
 import 'package:html/dom.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,7 @@ import 'package:gera_client/src/manage_path.dart';
 Future<String> getEpisodeUrl(int episodeNumber) async {
   final String apiKey = Env.apiKey;
   final String customSearchEngineId = Env.engineId;
-  final String query = 'sn@gera.fan ${episodeNumber.toString()}';
+  final String query = 'sn@gera.fan #${episodeNumber.toString()}';
   final String url = 'https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${customSearchEngineId}&q=${query}';
   final http.Response response = await http.get(Uri.parse(url));
   final Map<String, dynamic> responseJson = jsonDecode(response.body);
@@ -45,7 +46,10 @@ Future<void> downloadAudio(String url, String downloadPath) async {
 
   if (response.statusCode == 200) {
     final file = File(downloadPath);
-    await file.writeAsBytes(response.bodyBytes);
+    if (!await file.exists()) {
+      await file.create(recursive: true);
+      await file.writeAsBytes(response.bodyBytes);
+    } // すでにファイルが存在する場合は何もしない
   } else {
     throw Exception('Failed to download audio');
   }
@@ -60,7 +64,8 @@ Future<void> downloadEpisode(int episodeNumber) async {
 
   final String episodeUrl = await getEpisodeUrl(episodeNumber);
   final String audioUrl = await getAudioUrl(episodeUrl);
-  final String seriesName = await getEpisodeInfo(episodeNumber);
+  final EpisodeInfo? episodeInfo = await getEpisodeInfo(episodeNumber);
+  final String seriesName = episodeInfo?.seriesName ?? '';
   final String downloadPath = await getDownloadPath(seriesName, episodeNumber);
   await downloadAudio(audioUrl, downloadPath);
 }
