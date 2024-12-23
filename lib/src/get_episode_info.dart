@@ -10,20 +10,31 @@ import 'package:gera_client/src/manage_path.dart';
 
 /// downloadPath must be a full path including the file name
 Future<String> downloadThumbnail(String url, String downloadPath) async {
-  final response = await http.get(Uri.parse(url));
+  try {
+    final response = await http.get(Uri.parse(url));
 
-  if (response.statusCode == 200) {
-    final File file = File(downloadPath);
-    await file.writeAsBytes(response.bodyBytes);
-    return downloadPath;
-  } else {
-    throw Exception('Failed to download thumbnail');
+    if (response.statusCode == 200) {
+      final File file = File(downloadPath);
+      if (!await file.exists()) {
+        await file.create(recursive: true);
+        await file.writeAsBytes(response.bodyBytes);
+      }
+      return downloadPath;
+    } else {
+      throw Exception('Failed to download thumbnail');
+    }
+  } catch (e) {
+    throw Exception('Error downloading thumbnail: $e');
   }
 }
 
-Future<String> getEpisodeInfo(int episodeNumber) async {
+Future<EpisodeInfo?> getEpisodeInfo(int episodeNumber) async {
   // エピソードのURLを取得
   final String episodeUrl = await getEpisodeUrl(episodeNumber);
+
+  if (episodeUrl == '') {
+    return null;
+  }
 
   // エピソードのDOMを取得
   final http.Response response = await http.get(Uri.parse(episodeUrl));
@@ -35,14 +46,20 @@ Future<String> getEpisodeInfo(int episodeNumber) async {
   final String description = htmlDocument.querySelector('meta[property="og:description"]')?.attributes['content'] ?? '';
 
   // シリーズの名前を取得
-  final String rawScriptText = htmlDocument.querySelector('script')?.text ?? '';
-  final regex = RegExp(r'const chName = "(.*?)";'); // ちなみに、geraのページのscriptタグ内にはfirebaseのapiKeyが平文で書かれていて、やばい
-  final match = regex.firstMatch(rawScriptText);
-  final String seriesName = match?.group(1) ?? '';
+  final scriptTags = htmlDocument.getElementsByTagName('script');
+  String seriesName = '';
+  for (var script in scriptTags) {
+    final regex = RegExp(r'const chName = "(.*?)";'); // ちなみに、geraのページのscriptタグ内にはfirebaseのapiKeyが平文で書かれていて、やばい
+    final match = regex.firstMatch(script.text);
+    if (match != null) {
+      seriesName = match.group(1) ?? '';
+      break;
+    }
+  }
   
   // エピソードのシンボルを取得
   final String thumbnailUrl = htmlDocument.querySelector('meta[property="og:image"]')?.attributes['content'] ?? '';
-  final String thumbnailPath = await getThumbnailPath(seriesName, episodeNumber);
+  final String thumbnailPath = await getThumbnailPath(seriesName);
   await downloadThumbnail(thumbnailUrl, thumbnailPath);
   
   // エピソードの音声ファイルURLを取得
@@ -62,22 +79,31 @@ Future<String> getEpisodeInfo(int episodeNumber) async {
     thumbnailPath: thumbnailPath,
   );
 
-  final result = jsonEncode(episodeInfo.toJson());
+  final EpisodeInfo result = episodeInfo;
   return result;
 }
 
 // エラーが出るまでエピソードの情報を取得していく関数、エラーが出たら、エラーが出るまでのエピソードの情報を返す
-Future<List<String>> getEpisodeInfos() async {
-  final List<String> episodeInfos = [];
-  // 100000は適当な値 <- もっとうまい方法があるかもしれない
-  for (int i = 1; i <= 100000; i++) {
-    try {
-      final String episodeInfo = await getEpisodeInfo(i);
+Future<List<EpisodeInfo>> getEpisodeInfos() async {
+  final List<EpisodeInfo> episodeInfos = [];
+  int i = 1;
+  try {
+    while (true) {
+      print('current episode number: $i');
+      final EpisodeInfo? episodeInfo = await getEpisodeInfo(i);
+      if (episodeInfo == null || i < episodeInfos.length) {
+        break; // エピソードが存在しないか、すでに取得済みのエピソードの情報を取得しようとした場合、取得を終了する
+      }
       episodeInfos.add(episodeInfo);
-    } catch (e) {
-      break;
+      i++;
     }
+  } catch (e, stackTrace) {
+    print('Error: $e');
+    print('Stack trace: $stackTrace');
+    return episodeInfos;
   }
+  return episodeInfos;
+}
   // jsonエンコードされたエピソード情報のリストを返す
   /* 例
   [
@@ -94,5 +120,3 @@ Future<List<String>> getEpisodeInfos() async {
     ...
   ]
   */
-  return episodeInfos;
-}
